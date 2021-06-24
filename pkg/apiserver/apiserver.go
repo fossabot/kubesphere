@@ -215,7 +215,8 @@ func (s *APIServer) installKubeSphereAPIs() {
 		s.Config.AuthenticationOptions)
 	amOperator := am.NewOperator(s.KubernetesClient.KubeSphere(),
 		s.KubernetesClient.Kubernetes(),
-		s.InformerFactory)
+		s.InformerFactory,
+		s.Config)
 	rbacAuthorizer := rbac.NewRBACAuthorizer(amOperator)
 
 	urlruntime.Must(configv1alpha2.AddToContainer(s.container, s.Config))
@@ -344,7 +345,7 @@ func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	case authorizationoptions.RBAC:
 		excludedPaths := []string{"/oauth/*", "/kapis/config.kubesphere.io/*", "/kapis/version", "/kapis/metrics"}
 		pathAuthorizer, _ := path.NewAuthorizer(excludedPaths)
-		amOperator := am.NewReadOnlyOperator(s.InformerFactory)
+		amOperator := am.NewReadOnlyOperator(s.InformerFactory, s.Config)
 		authorizers = unionauthorizer.New(pathAuthorizer, rbac.NewRBACAuthorizer(amOperator))
 	}
 
@@ -452,7 +453,6 @@ func (s *APIServer) waitForResourceSync(stopCh <-chan struct{}) error {
 		{Group: "iam.kubesphere.io", Version: "v1alpha2", Resource: "groups"},
 		{Group: "iam.kubesphere.io", Version: "v1alpha2", Resource: "groupbindings"},
 		{Group: "cluster.kubesphere.io", Version: "v1alpha1", Resource: "clusters"},
-		{Group: "devops.kubesphere.io", Version: "v1alpha3", Resource: "devopsprojects"},
 		{Group: "network.kubesphere.io", Version: "v1alpha1", Resource: "ippools"},
 		{Group: "notification.kubesphere.io", Version: "v2beta1", Resource: v2beta1.ResourcesPluralConfig},
 		{Group: "notification.kubesphere.io", Version: "v2beta1", Resource: v2beta1.ResourcesPluralReceiver},
